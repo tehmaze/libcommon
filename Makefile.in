@@ -1,0 +1,171 @@
+MAKEFLAGS += -rR --include-dir=$(CURDIR)
+
+# Avoid funny character set dependencies
+unexport LC_ALL
+LC_COLLATE=C
+LC_NUMERIC=C
+export LC_COLLATE LC_NUMERIC
+
+# Make variables (CC, etc...)
+CROSS_COMPILE	= {{ CROSS_COMPILE }}
+AS		= $(CROSS_COMPILE)as
+LD		= $(CROSS_COMPILE)ld
+CC		= $(CROSS_COMPILE)gcc
+CP		= cp
+CPP		= $(CC) -E
+AR		= $(CROSS_COMPILE)ar
+NM		= $(CROSS_COMPILE)nm
+STRIP		= $(CROSS_COMPILE)strip
+OBJCOPY		= $(CROSS_COMPILE)objcopy
+OBJDUMP		= $(CROSS_COMPILE)objdump
+AWK		= awk
+INSTALL		= install
+PERL 		= perl
+BINEXT		= {{ BINEXT }}
+ARLIBPRE	= {{ ARLIBPRE }}
+ARLIBEXT	= {{ ARLIBEXT }}
+SHLIBPRE	= {{ SHLIBPRE }}
+SHLIBEXT	= {{ SHLIBEXT }}
+
+# Verbosity control
+ifeq ($(V),)
+Q=
+endif
+ifeq ($(V),0)
+Q=@echo "  $1	$@"; $($1)
+endif
+ifeq ("$(origin V)", "command line")
+  BUILD_VERBOSE = $(V)
+endif
+ifndef BUILD_VERBOSE
+  BUILD_VERBOSE = 0
+endif
+ifeq ("$(origin DEBUG)", "command line")
+  BUILD_DEBUG = $(DEBUG)
+endif
+ifndef BUILD_DEBUG
+  BUILD_DEBUG = 0
+endif
+
+ifeq ($(BUILD_VERBOSE),1)
+  quiet =
+  Q =
+  QAR = $(AR)
+  QCC = $(CC)
+  QCP = $(CP)
+  QLD = $(CC)
+  QMM = $(CC)
+  QINSTALL = $(INSTALL)
+else
+  quiet=quiet_
+  Q = @
+  QAR = @printf "[\033[1;32mARCHIV\033[0m] %s\n" "$@"; $(AR)
+  QCC = @printf "[\033[1;33m  CC  \033[0m] %s\n" "$@"; $(CC)
+  QCP = @printf "[\033[1;32m COPY \033[0m] %s\n" "$@"; $(CP)
+  QLD = @printf "[\033[1;32m LINK \033[0m] %s\n" "$@"; $(CC)
+  QMM = @printf "[\033[1;34m DEPS \033[0m] %s\n" "$<"; $(CC)
+  QINSTALL = @printf "[\033[1;32m COPY \033[0m] %s\n" "$^"; $(INSTALL)
+endif
+
+UNAME := $(shell uname -s)
+
+ifeq ($(V),1)
+MKDIR_P = mkdir -p -v
+RM 		= rm -rv
+else
+MKDIR_P	= mkdir -p
+RM 		= rm -r
+endif
+
+ifeq ($(OS),Windows)
+setlocal enableextensions
+MKDIR_P = md
+endif
+
+.PHONY: all
+
+PREFIX     ?= {{ PREFIX }}
+BINDIR     ?= $(DEST)$(PREFIX)/bin
+LIBDIR     ?= $(DEST)$(PREFIX)/lib
+INCLUDEDIR ?= $(DEST)$(PREFIX)/include
+
+CFLAGS  ?= {{ CFLAGS|join(" ") }}
+CFLAGS  += {% for name in DEFINES %}-D{{ name }} {% endfor %}
+CFLAGS  += {% for path in INCLUDES %}-I{{ path }} {% endfor %}
+{% if not have('mingw') -%}
+CFLAGS  += -fPIC
+{% endif -%}
+{% if with('debug') -%}
+CFLAGS  += -g
+{% else -%}
+CFLAGS  += -O2
+{% endif -%}
+LDFLAGS ?= {{ LDFLAGS|join(" ") }}
+LDFLAGS += -L. {% for path in LIBPATH %}-L{{ path }} {% endfor %}
+
+COMMON_SOURCES 		 = $(wildcard common/**/*.c common/*.c)
+{% if have('linux/termios.h') -%}
+COMMON_SOURCES 		+= $(wildcard common/serial/termios/*.c)
+{% endif -%}
+ifeq ($(UNAME),Darwin)
+COMMON_SOURCES 		+= $(wildcard common/serial/platform/darwin.c)
+endif
+ifeq ($(UNAME),Linux)
+COMMON_SOURCES 		+= $(wildcard common/serial/platform/linux.c)
+endif
+ifeq ($(OS),Windows)
+COMMON_SOURCES 		+= $(wildcard common/serial/platform/win32.c)
+endif
+COMMON_OBJECTS 		 = $(patsubst %.c,%.o,$(COMMON_SOURCES))
+COMMON_DEPS 		 = $(patsubst %.c,%.d,$(COMMON_SOURCES))
+COMMON_CFLAGS 		 = $(CFLAGS)
+COMMON_ARCHIVE 		 = $(ARLIBPRE)common$(ARLIBEXT)
+COMMON_LIBS 		 = -ltalloc
+{% if have('mingw') %}
+COMMON_LIBS 		+= -lhid -lsetupapi -lws2_32
+{% endif %}
+ifeq ($(UNAME),Darwin)
+COMMON_LIBS 		+= -framework IOKit -framework CoreFoundation
+endif
+
+UNAME := $(shell uname -s)
+
+all: build
+
+debug: build-debug
+
+build: build-common
+
+build-debug: FLAGS += DEBUG=1
+build-debug: build
+
+install-dir:
+	$(INSTALL) -m0755 -d $(BINDIR)
+	$(INSTALL) -m0755 -d $(LIBDIR)
+
+install: install-dir install-common
+
+clean: clean-common
+
+$(COMMON_ARCHIVE): $(COMMON_OBJECTS)
+	$(QAR) -rcs $@ $^
+
+build-common: $(COMMON_ARCHIVE)
+
+common/%.o: common/%.c
+common/%.o: common/%.c common/%.d
+	$(QCC) -c $(COMMON_CFLAGS) -o $@ $<
+
+common/%.d: common/%.c
+	$(QMM) -MM $(DEPFLAGS) $(COMMON_CFLAGS) -MT $(patsubst %.d,%.o,$@) -o $@ $<
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),clean-common)
+-include $(patsubst %.o,%.d,$(COMMON_OBJECTS))
+endif
+endif
+
+clean-common:
+	$(Q)for file in $(COMMON_ARCHIVE) $(COMMON_OBJECTS) $(COMMON_DEPS); do if [ -f "$$file" ]; then $(RM) "$$file"; fi; done
+
+.force:

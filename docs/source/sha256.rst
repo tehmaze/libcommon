@@ -1,0 +1,35 @@
+.. _sha256:
+
+sha256: SHA-256 Hashing Algorithm
+=================================
+
+This is the public domain implementation by Igor Pavlov.
+
+
+Data Types
+----------
+
+.. c:type:: sha256_t
+
+   Context for the SHA-256 hashing algorithm.
+
+
+API
+---
+
+.. c:macro:: SHA256_DIGEST_LENGTH
+
+   Size of a SHA-256 digest.
+
+.. c:function:: void sha256_init(sha256_t *p)
+
+   Initialize a SHA-256 context.
+
+.. c:function:: void sha256_update(sha256_t *p, const uint8_t *data, size_t size)
+
+   Update the SHA-256 hash.
+
+.. c:function:: void sha256_final(sha256_t *p, uint8_t *digest)
+
+   Finalize the SHA-256 hash clearing the shift registers, packing the result
+   in buffer ``digest``.

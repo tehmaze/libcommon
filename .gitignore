@@ -1,0 +1,39 @@
+# Object files
+*.a
+*.o
+*.ko
+*.obj
+*.elf
+*.pyc
+*.pyo
+*.dylib
+__pycache__
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+
+# Dependancy files
+*.d
+
+# Generated files
+common/config.h
+Makefile
+wright.cache
+
+# Misc
+.DS_Store
+*.log
+*.swp
+*.pcap

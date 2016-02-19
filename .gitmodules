@@ -1,0 +1,3 @@
+[submodule "site_wright"]
+	path = site_wright
+	url = https://github.com/tehmaze-labs/wright
