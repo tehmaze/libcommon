@@ -243,6 +243,10 @@ C(dsr, serial_dsr_t);
 C(xon_xoff, serial_xon_xoff_t);
 #undef C
 
+#if defined(PLATFORM_WINDOWS)
+char* strtok_r(char *str, const char *delim, char **nextp);
+#endif
+
 #if defined(__cplusplus)
 }
 #endif

@@ -1,4 +1,3 @@
-#include <sys/socket.h>
 #include "common/config.h"
 #include "common/socket.h"
 #include "common/platform.h"
@@ -6,6 +5,7 @@
 #if defined(PLATFORM_POSIX)
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/socket.h>
 #endif
 
 PRIVATE int socket_set_blocking(socket_t *s, int v)
@@ -26,6 +26,7 @@ PRIVATE int socket_set_blocking(socket_t *s, int v)
         return 0;
     }
 #else
+    (void)v;
     return 0;
 #endif
 }

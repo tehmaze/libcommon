@@ -92,7 +92,7 @@ INCLUDEDIR ?= $(DEST)$(PREFIX)/include
 CFLAGS  ?= {{ CFLAGS|join(" ") }}
 CFLAGS  += {% for name in DEFINES %}-D{{ name }} {% endfor %}
 CFLAGS  += {% for path in INCLUDES %}-I{{ path }} {% endfor %}
-{% if not have('mingw') -%}
+{% if env.PLATFORM != 'win32' -%}
 CFLAGS  += -fPIC
 {% endif -%}
 {% if with('debug') -%}
@@ -107,15 +107,13 @@ COMMON_SOURCES 		 = $(wildcard common/**/*.c common/*.c)
 {% if have('linux/termios.h') -%}
 COMMON_SOURCES 		+= $(wildcard common/serial/termios/*.c)
 {% endif -%}
-ifeq ($(UNAME),Darwin)
+{% if env.PLATFORM == 'osx' -%}
 COMMON_SOURCES 		+= $(wildcard common/serial/platform/darwin.c)
-endif
-ifeq ($(UNAME),Linux)
+{% elif env.PLATFORM == 'linux' -%}
 COMMON_SOURCES 		+= $(wildcard common/serial/platform/linux.c)
-endif
-ifeq ($(OS),Windows)
+{% elif env.PLATFORM == 'win32' -%}
 COMMON_SOURCES 		+= $(wildcard common/serial/platform/win32.c)
-endif
+{% endif -%}
 COMMON_OBJECTS 		 = $(patsubst %.c,%.o,$(COMMON_SOURCES))
 COMMON_DEPS 		 = $(patsubst %.c,%.d,$(COMMON_SOURCES))
 COMMON_CFLAGS 		 = $(CFLAGS)

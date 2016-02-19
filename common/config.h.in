@@ -27,6 +27,7 @@
 #define PRIVATE __attribute__((visibility("hidden")))
 {% else -%}
 #define PRIVATE
-{% endif -%}
+{% endif %}
 
 #endif // _COMMON_CONFIG_H
+

@@ -1,11 +1,12 @@
-#include <netdb.h>
 #include "common/byte.h"
+#include "common/config.h"
 #include "common/debug.h"
 #include "common/format.h"
 #include "common/socket.h"
 
-
+#if defined(HAVE_ARPA_INET_H) && defined(HAVE_NETDB_H)
 #include <arpa/inet.h>
+#include <netdb.h>
 
 int ip6resolve(ip6_t ip, const char *host)
 {
@@ -62,3 +63,11 @@ int ip6resolve(ip6_t ip, const char *host)
     freeaddrinfo(ai0);
     return ret;
 }
+#else
+int ip6resolve(ip6_t ip, const char *host)
+{
+    (void)ip;
+    (void)host;
+    return -1;  // TODO(maze): port
+}
+#endif

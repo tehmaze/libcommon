@@ -9,6 +9,10 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#elif defined(PLATFORM_WINDOWS)
+#include <windows.h>
+#include <winsock2.h>
+#include <io.h>
 #endif
 
 PRIVATE ssize_t socket_sendfile(socket_t *s, int in, off_t offset, size_t len)
@@ -25,6 +29,10 @@ PRIVATE ssize_t socket_sendfilex(int fd, int in, off_t offset, size_t len)
     off_t siz = len;
     return (ssize_t)sendfile(in, fd, offset, &siz, NULL, 0);
 #else
+    (void)fd;
+    (void)in;
+    (void)offset;
+    (void)len;
     errno = ENOTSUP;
     return -1;
 #endif
@@ -38,6 +46,16 @@ PRIVATE int socket_sendfile_full(socket_t *s, int in, size_t len, size_t *out)
     }
     return socket_sendfilex_full(s->fd, in, len, out);
 }
+
+#if !defined(ENOTSOCK)
+#define ENOTSOCK ENOTSUP
+#endif
+#if !defined(EOPNOTSUPP)
+#define EOPNOTSUPP ENOTSUP
+#endif
+#if !defined(EWOULDBLOCK) && defined(WSAEWOULDBLOCK)
+#define EWOULDBLOCK WSAEWOULDBLOCK
+#endif
 
 /* Retry, if:
  * EINTR      A signal interrupted sendfile() before it could be completed.
