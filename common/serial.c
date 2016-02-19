@@ -6,7 +6,7 @@
 #include "common/serial/internal.h"
 
 #if defined(HAVE_TERMIOS)
-#include "common/serial/termios.h"
+#include "common/serial/termios/termios.h"
 #endif
 
 PRIVATE static const baudrate_t baudrates[] = {

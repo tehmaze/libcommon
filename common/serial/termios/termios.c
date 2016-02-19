@@ -1,6 +1,6 @@
 #include "common/config.h"
 #include "common/platform.h"
-#include "common/serial/termios.h"
+#include "common/serial/termios/termios.h"
 
 #if defined(HAVE_TERMIOS)
 
