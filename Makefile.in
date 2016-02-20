@@ -95,6 +95,10 @@ CFLAGS  += {% for path in INCLUDES %}-I{{ path }} {% endfor %}
 {% if env.PLATFORM != 'win32' -%}
 CFLAGS  += -fPIC
 {% endif -%}
+{% if env.PLATFORM == 'osx' -%}
+# Work around for clang compiler bug
+CFLAGS  += -fgnu89-inline
+{% endif -%}
 {% if with('debug') -%}
 CFLAGS  += -g
 {% else -%}
